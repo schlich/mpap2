@@ -1,9 +1,14 @@
 import os
 import dash
+import gspread
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
+from apiclient.discovery import build
+from oauth2client import file, client, tools
+from oauth2client.service_account import ServiceAccountCredentials
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -11,7 +16,14 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 
-data = pd.read_csv('cleaned_police_data.csv')
+scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
+credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials/quickstart-1569111830589-99d9dd4fa4d5.json', scope)
+gc = gspread.authorize(credentials)
+worksheet = gc.open("cleaned_police_data").sheet1
+rawdata = worksheet.get_all_values()
+headers = rawdata.pop(0)
+data = pd.DataFrame(rawdata, columns=headers)
 
 race_counts = data['race of complainant'].value_counts()
 
