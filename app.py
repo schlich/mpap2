@@ -17,9 +17,12 @@ server = app.server
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
+
+creds_dict = json.loads(json_creds)
 creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 gc = gspread.authorize(credentials)
+
 worksheet = gc.open("cleaned_police_data").sheet1
 rawdata = worksheet.get_all_values()
 headers = rawdata.pop(0)
