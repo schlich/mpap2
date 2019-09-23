@@ -1,6 +1,4 @@
-import os
-import dash
-import gspread
+import os, dash, gspread, json
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
@@ -18,7 +16,9 @@ server = app.server
 
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
-credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials/quickstart-1569111830589-99d9dd4fa4d5.json', scope)
+json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
+creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 gc = gspread.authorize(credentials)
 worksheet = gc.open("cleaned_police_data").sheet1
 rawdata = worksheet.get_all_values()
