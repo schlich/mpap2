@@ -2,11 +2,8 @@ import os, dash, gspread, json
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
+import pygsheets as pyg
 import plotly.graph_objs as go
-from apiclient.discovery import build
-from oauth2client import file, client, tools
-from oauth2client.service_account import ServiceAccountCredentials
-
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -14,16 +11,9 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 
-scope = ['https://spreadsheets.google.com/feeds',
-         'https://www.googleapis.com/auth/drive']
-json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
+client = pyg.authorize(service_account_env_var = 'GOOGLE_SHEETS_CREDS_JSON')
 
-creds_dict = json.loads(json_creds)
-creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-gc = gspread.authorize(credentials)
-
-worksheet = gc.open("cleaned_police_data").sheet1
+worksheet = client.open("cleaned_police_data").sheet1
 rawdata = worksheet.get_all_values()
 headers = rawdata.pop(0)
 data = pd.DataFrame(rawdata, columns=headers)
