@@ -1,6 +1,7 @@
-import os, dash, gspread, json
+import os, dash, json
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table
 import pandas as pd
 import pygsheets as pyg
 import plotly.graph_objs as go
@@ -19,9 +20,11 @@ headers = rawdata.pop(0)
 data = pd.DataFrame(rawdata, columns=headers)
 
 race_counts = data['race of complainant'].value_counts()
+officers = data['Officer Name'].unique()
 
 app.layout = html.Div([
     html.H2('St Louis Police Complaints'),
+	html.Datalist(id='police-search', children = [html.Option(value=i) for i in officers]),
     dcc.Graph(
 		figure=go.Figure(
 			data=go.Pie(
@@ -31,13 +34,18 @@ app.layout = html.Div([
 			)
 		)
     ),
-    html.Div(id='display-value')
+	html.H5('Select an Officer', id='selected-officer'),
+    dash_table.DataTable(
+		id='complaint-list',
+		columns=['Date','Nature of Complaint',"Complainant's Statement"],
+		# data=data,
+	)
 ])
 
-# @app.callback(dash.dependencies.Output('display-value', 'children'),
-#               [dash.dependencies.Input('dropdown', 'value')])
-# def display_value(value):
-#     return 'You have selected "{}"'.format(value)
+@app.callback(dash.dependencies.Output('selected-officer', 'children'),
+              [dash.dependencies.Input('police-search', 'children')])
+def display_value(value):
+    return 'You have selected "{}"'.format(value)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
