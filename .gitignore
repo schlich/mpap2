@@ -2,3 +2,4 @@ credentials/
 *.pyc
 .DS_Store
 .env
+service_account_key.json
