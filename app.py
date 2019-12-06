@@ -19,10 +19,10 @@ rawdata = worksheet.get_all_values()
 headers = rawdata.pop(0)
 data = pd.DataFrame(rawdata, columns=headers)
 
-race_counts = data['race of complainant'].value_counts()
+race_counts = data['Race of Complainant'].value_counts()
 officers = data['Officer Name'].unique()
-display_data = data[['Officer Name','Date of Incident','Location of Incident','Nature of Complaint',"Complainant's Statement"]]
-column_names = ['Date of Incident','Location of Incident','Nature of Complaint']
+display_data = data[['Officer Name','Date of Incident','Location of Incident','Nature of Complaint',"Complainant's Statement","Age","Race of Complainant","Complainant Gender"]]
+column_names = ['Date of Incident','Nature of Complaint','Age','Race of Complainant','Complainant Gender']
 
 app.layout = html.Div([
     html.H2('St Louis Police Complaints'),
