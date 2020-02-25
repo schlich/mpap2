@@ -14,14 +14,15 @@ server = app.server
 
 client = pyg.authorize(service_account_env_var = 'GOOGLE_SHEETS_CREDS_JSON')
 
-worksheet = client.open("cleaned_police_data").sheet1
-rawdata = worksheet.get_all_values()
+officers = client.open("cleaned_police_data").worksheet('title','officers')
+complaints = client.open("cleaned_police_data").worksheet('title','complaints')
+rawdata = complaints.get_all_values()
 headers = rawdata.pop(0)
 data = pd.DataFrame(rawdata, columns=headers)
 
 race_counts = data['Race of Complainant'].value_counts()
 officers = data['Officer Name'].unique()
-display_data = data[['Officer Name','Date of Incident','Location of Incident','Nature of Complaint',"Complainant's Statement","Age","Race of Complainant","Complainant Gender"]]
+display_data = data[['Officer Name', 'DSN #', 'Rank','Assignment','Date of Incident','Location of Incident', 'Nature of Complaint',"Complainant's Statement",'Age',"Race of Complainant","Complainant Gender"]]
 column_names = ['Date of Incident','Nature of Complaint','Age','Race of Complainant','Complainant Gender']
 
 app.layout = html.Div([
@@ -31,7 +32,13 @@ app.layout = html.Div([
 	dcc.Input(id='officer_input', list='officers'),
 	html.Button('Search',id='submit'),
 	html.Div([
-		html.Div(
+		html.Div([
+			html.H3('Officer Name', id='officer_name'),
+			html.H5('DSN: ', id='dsn'),
+			html.P('Rank: ', id='rank'),
+			html.P('Assignment: ', id='assignment'),
+		]),
+		html.Div([
 			dash_table.DataTable(
 				id='complaints',
 				columns=[{"name": i, "id": i, 'selectable': True} for i in column_names],
@@ -42,13 +49,12 @@ app.layout = html.Div([
 					'whiteSpace': 'normal',
 					'height': 'auto'
 				},
-			), className='six columns'
-		),
-		html.Div([
+			),
 			html.H3("Complainant's Statement:"),
 			html.P("Search for an officer and select a row to view the complainant's statement",id='statement')
-		], className='six columns')
-	], className='row', id='complaints_html', style= {'display': 'none'}),
+		])
+	], id='data_html', style= {'display': 'none'}),
+	html.H3('Citizen Complaint Summary Statistics-'),
 	dcc.Graph(
 		figure=go.Figure(
 			data=go.Pie(
@@ -63,28 +69,35 @@ app.layout = html.Div([
 
 @app.callback(
 	[dash.dependencies.Output('complaints', 'data'),
-	dash.dependencies.Output('complaints_html','style')],
+	dash.dependencies.Output('data_html','style'),
+	dash.dependencies.Output('officer_name','children'),
+	dash.dependencies.Output('dsn','children'),
+	dash.dependencies.Output('rank','children'),
+	dash.dependencies.Output('assignment','children')],
 	[dash.dependencies.Input('submit', 'n_clicks')],
     [dash.dependencies.State('officer_input', 'value')])
 def update_data(n_clicks,officer):
-	if not n_clicks:
-		raise PreventUpdate
-	else:
+	if n_clicks:
 		complaints = display_data[display_data['Officer Name']==officer].to_dict('records')
-		return complaints, {'display':'block'}
+		firstrow = complaints[0]
+		dsn = 'DSN: ' + firstrow['DSN #']
+		rank = 'Rank: ' + firstrow['Rank']
+		assignment = 'Assignment: ' + firstrow['Assignment']
+		return complaints, {'display':'block'}, officer, dsn, rank, assignment
+	else:
+		raise PreventUpdate
 
 @app.callback(
 	dash.dependencies.Output('statement','children'),
-     [dash.dependencies.Input('complaints', "derived_virtual_selected_rows")],
-	 [dash.dependencies.State('complaints', "derived_virtual_data")],
+     [dash.dependencies.Input('complaints', "derived_virtual_data"),
+	 dash.dependencies.Input('complaints', "derived_virtual_selected_rows")],
 )
-def get_statement(derived_virtual_selected_rows, row):
-	print(derived_virtual_selected_rows)
+def get_statement(rows, derived_virtual_selected_rows):
 	if not derived_virtual_selected_rows:
 		statement = "Select a row to view the complainant's statement"
 	else:
-		selected_row =  pd.DataFrame(row)
-		statement = selected_row["Complainant's Statement"]
+		data =  pd.DataFrame(rows)
+		statement = data.loc[derived_virtual_selected_rows[0],"Complainant's Statement"]
 
 	return statement
 
